@@ -1,118 +1,168 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
-
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+interface Todo {
+  id: number;
+  text: string;
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+const App: React.FC = () => {
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [todoText, setTodoText] = useState<string>('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState<string>('');
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const addTodo = () => {
+    if (todoText) {
+      setTodos([...todos, { id: Date.now(), text: todoText }]);
+      setTodoText('');
+    }
+  };
+
+  const deleteTodo = (id: number) => {
+    setTodos(todos.filter(todo => todo.id !== id));
+  };
+
+  const editTodo = (id: number, newText: string) => {
+    setTodos(todos.map(todo => (todo.id === id ? { ...todo, text: newText } : todo)));
+    setEditingId(null);
+    setEditingText('');
+  };
+
+  const renderItem = ({ item }: { item: Todo }) => {
+    if (editingId === item.id) {
+      return (
+        <View style={styles.todoItem}>
+          <TextInput
+            style={styles.input}
+            value={editingText}
+            onChangeText={setEditingText}
+            autoFocus
+          />
+          <TouchableOpacity onPress={() => editTodo(item.id, editingText)} style={styles.saveButton}>
+            <Text style={styles.saveButtonText}>Save</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.todoItem}>
+        <Text>{item.text}</Text>
+        <View style={styles.row}>
+          <TouchableOpacity onPress={() => setEditingId(item.id)} style={styles.editButton}>
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => deleteTodo(item.id)} style={styles.deleteButton}>
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <View style={styles.container}>
+      <Text style={styles.title}>Todo App</Text>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          value={todoText}
+          onChangeText={setTodoText}
+          placeholder="Enter your todo"
+        />
+        <TouchableOpacity onPress={addTodo} style={styles.addButton}>
+          <Text style={styles.addButtonText}>Add</Text>
+        </TouchableOpacity>
+      </View>
+      <FlatList
+        data={todos}
+        renderItem={renderItem}
+        keyExtractor={item => item.id.toString()}
+        style={styles.list}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    padding: 20,
+    alignItems: 'center',
   },
-  sectionTitle: {
+  title: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  inputContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
   },
-  highlight: {
-    fontWeight: '700',
+  input: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    paddingHorizontal: 10,
+    marginRight: 10,
   },
+  addButton: {
+    backgroundColor: 'blue',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    height: 40,
+  },
+  addButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  list: {
+    flex: 1,
+    width: '100%',
+  },
+  todoItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+  },
+  editButton: {
+    backgroundColor: 'green',
+    padding: 5,
+    borderRadius: 5,
+    marginRight: 5,
+  },
+  editButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  deleteButton: {
+    backgroundColor: 'red',
+    padding: 5,
+    borderRadius: 5,
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  saveButton: {
+    backgroundColor: 'blue',
+    padding: 5,
+    borderRadius: 5,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  row: {
+    flexDirection: 'row'
+  }
 });
 
 export default App;
